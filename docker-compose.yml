@@ -1,0 +1,51 @@
+# RINGMAST4R // TV
+# Two containers: the ErsatzTV engine (scans media, builds 24/7 playouts,
+# transcodes to HLS) and a tiny nginx that serves the watch page and
+# reverse-proxies /iptv/ to the engine.
+#
+# 1. Put your media somewhere and edit the volume mappings below (read-only).
+# 2. Edit player/default.conf: set your LAN IP / hostname in the sub_filter list.
+# 3. docker compose up -d
+# 4. Engine admin UI:  http://<host>:8409   (build libraries + channels here or via SQL)
+#    Watch page:       http://<host>:8410
+
+services:
+  ersatztv:
+    # CPU-only image. If you have an NVIDIA GPU use jasongdove/ersatztv:latest-nvidia
+    # and uncomment the deploy block below; hardware transcode changes everything.
+    image: jasongdove/ersatztv:latest
+    container_name: ersatztv
+    restart: unless-stopped
+    ports:
+      - "8409:8409"
+    volumes:
+      - ersatztv-config:/root/.local/share/ersatztv
+      # your media, read-only. Point at SUBFOLDERS, never a drive root (see docs/GOTCHAS.md)
+      - /path/to/movies:/media/movies:ro
+      # - /path/to/commercials:/media/commercials:ro
+    environment:
+      - TZ=America/New_York
+    # --- NVIDIA GPU transcode (with the -nvidia image) ---
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  etv-player:
+    image: nginx:alpine
+    container_name: etv-player
+    restart: unless-stopped
+    ports:
+      - "8410:80"
+    volumes:
+      - ./player/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./player/index.html:/usr/share/nginx/html/index.html:ro
+      - ./player/og-image.png:/usr/share/nginx/html/og-image.png:ro
+    depends_on:
+      - ersatztv
+
+volumes:
+  ersatztv-config:

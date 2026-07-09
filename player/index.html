@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RINGMAST4R TV</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23000'/%3E%3Cline x1='5' y1='2' x2='8' y2='5' stroke='%237CFC00' stroke-width='1'/%3E%3Cline x1='11' y1='2' x2='8' y2='5' stroke='%237CFC00' stroke-width='1'/%3E%3Crect x='2' y='5' width='12' height='9' rx='1.5' fill='none' stroke='%237CFC00' stroke-width='1.2'/%3E%3Crect x='4' y='7' width='6' height='5' fill='%237CFC00' opacity='.55'/%3E%3C/svg%3E">
+<meta property="og:type"         content="website">
+<meta property="og:url"          content="https://your-tv.example.com">
+<meta property="og:title"        content="RINGMAST4R TV">
+<meta property="og:description"  content="24/7 live channels with a Prevue-style guide: Movies, Horror, Cartoons, Sci-Fi, Crime, Westerns, 90s Nostalgia and more.">
+<meta property="og:image"        content="https://your-tv.example.com/og-image.png">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:url"         content="https://your-tv.example.com">
+<meta name="twitter:title"       content="RINGMAST4R TV">
+<meta name="twitter:description" content="24/7 live channels from the Ringmast4r library.">
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:#000;font-family:Consolas,'Courier New',monospace;color:#7CFC00;overflow:hidden}
+
+  #wrap{display:flex;height:100vh;overflow:hidden}
+
+  /* sidebar / channel list */
+  #side{width:240px;background:#0a0a0a;border-right:1px solid #1a3a1a;overflow-y:auto;flex:none}
+  #side h1{font-size:13px;color:#5f5;letter-spacing:3px;padding:14px 12px;margin:0;border-bottom:1px solid #1a3a1a}
+  .ch{padding:11px 12px;cursor:pointer;border-bottom:1px solid #111;font-size:13px;display:flex;gap:10px;align-items:center}
+  .ch:hover{background:#102010}
+  .ch.active{background:#1a3a1a;color:#bfffbf;box-shadow:inset 3px 0 0 #5f5}
+  .ch .num{color:#3a3;min-width:20px;text-align:right}
+  .ch.guide .num{color:#ffd24a}
+  .ch.guide{color:#ffe9a6}
+
+  /* player */
+  #main{flex:1;position:relative;background:#000;overflow:hidden}
+  video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
+
+  /* now-playing bug (top-right) */
+  #bug{position:absolute;top:12px;right:16px;z-index:5;background:rgba(0,0,0,.6);padding:7px 13px;
+       border:1px solid #2a2;border-radius:3px;font-size:15px;text-align:right;letter-spacing:1px;pointer-events:none}
+  #bug .now{font-size:11px;color:#cfc;display:block;margin-top:4px;max-width:280px;letter-spacing:0}
+
+  /* tap-to-unmute pill (plain text, no emoji) */
+  #unmute{display:none;position:absolute;top:58px;left:50%;transform:translateX(-50%);z-index:25;
+          background:rgba(0,20,0,.92);border:2px solid #5f5;border-radius:8px;color:#7CFC00;
+          font:600 15px Consolas,'Courier New',monospace;letter-spacing:1px;padding:12px 22px;
+          cursor:pointer;box-shadow:0 0 14px rgba(0,255,80,.35)}
+  #unmute.show{display:block}
+
+  /* ===== channel status / debug overlay (center of player) ===== */
+  #status{display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:24;
+          max-width:80%;text-align:center;padding:18px 26px;border-radius:8px;
+          background:rgba(0,0,0,.82);border:1px solid #2a2;
+          font:600 15px Consolas,'Courier New',monospace;letter-spacing:1px;color:#7CFC00;line-height:1.5}
+  #status.show{display:block}
+  #status.err{border-color:#a33;color:#ff7a7a}
+  #status.load{border-color:#aa3;color:#ffe9a6}
+  #status .sub{display:block;margin-top:8px;font-size:12px;font-weight:400;color:#9a9a9a;letter-spacing:0}
+
+  /* ===== TV GUIDE (channel 1) ===== */
+  #guide{display:none;position:absolute;inset:0;z-index:8;background:rgba(2,10,2,.86);overflow:hidden}
+  #guide.show{display:flex;flex-direction:column}
+  #guide-head{flex:none;display:flex;align-items:center;justify-content:space-between;
+              padding:13px 18px;border-bottom:2px solid #1a5a1a;background:#031203;letter-spacing:2px}
+  #guide-head .gt{font-size:17px;font-weight:700;color:#ffd24a}
+  #guide-head .gclock{font-size:15px;color:#bfffbf}
+  #guide-scroll{flex:1;overflow:hidden;position:relative}
+  #guide-rows{position:absolute;left:0;right:0;top:0;will-change:transform}
+  .grow{display:flex;gap:12px;align-items:flex-start;padding:12px 18px;border-bottom:1px solid #0c240c;cursor:pointer}
+  .grow:hover{background:#0a1f0a}
+  .grow.cur{background:#0d260d;box-shadow:inset 4px 0 0 #ffd24a}
+  .grow .gnum{flex:none;width:52px;text-align:center;background:#0a3a0a;border:1px solid #2a5a2a;border-radius:5px;
+              color:#9f9;font-size:19px;font-weight:700;padding:9px 0}
+  .grow .gbody{flex:1;min-width:0}
+  .grow .gname{color:#bfffbf;font-weight:700;font-size:13px;letter-spacing:1px;margin-bottom:4px}
+  .grow .nowln{color:#fff;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .grow .nextln{color:#6a8a6a;font-size:12px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .grow .tm{color:#ffd24a}
+  .grow .nextln .tm{color:#3a6a3a}
+
+  /* hamburger (mobile) */
+  #ham{display:none;position:absolute;top:12px;left:12px;z-index:20;width:50px;height:50px;padding:0;cursor:pointer;
+       background:rgba(0,25,0,.9);border:1px solid #3a3;border-radius:6px;
+       flex-direction:column;align-items:center;justify-content:center;gap:6px}
+  #ham span{display:block;width:24px;height:2px;background:#7CFC00;pointer-events:none}
+
+  #bd{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;opacity:0;pointer-events:none;transition:opacity .25s}
+  #bd.open{opacity:1;pointer-events:auto}
+
+  /* ===== MOBILE: full-screen video + slide-in channel drawer (hamburger) ===== */
+  @media(max-width:768px){
+    #ham{display:flex}                                          /* show the hamburger */
+    #side{position:fixed;top:0;left:0;height:100%;width:78%;max-width:300px;z-index:9999;
+          transform:translateX(-100%);transition:transform .25s ease;
+          box-shadow:2px 0 18px rgba(0,0,0,.7)}                 /* off-screen drawer */
+    #side.open{transform:translateX(0)}                          /* slides in on hamburger tap */
+    #bd{display:block}                                          /* backdrop catches outside taps */
+    /* #main stays flex:1 -> the video fills the whole screen */
+    #bug{top:10px;right:10px;font-size:12px;padding:5px 9px}
+    #unmute{top:auto;bottom:54px;font-size:13px;padding:10px 16px}
+    #guide-head{padding-left:70px}                               /* clear the hamburger button */
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+
+  <div id="side">
+    <h1>// CHANNELS</h1>
+    <div id="list"></div>
+  </div>
+
+  <div id="main">
+    <button id="ham" aria-label="Channels" aria-expanded="false"><span></span><span></span><span></span></button>
+    <div id="bug"><span id="bugch">CH</span><span class="now" id="now">tuning in...</span></div>
+    <div id="unmute">TAP TO UNMUTE</div>
+    <div id="status"></div>
+    <video id="v" controls autoplay playsinline x-webkit-airplay="allow"></video>
+
+    <!-- TV GUIDE (channel 1) -->
+    <div id="guide">
+      <div id="guide-head">
+        <span class="gt">RINGMAST4R TV &middot; GUIDE</span>
+        <span class="gclock" id="guide-clock"></span>
+      </div>
+      <div id="guide-scroll"><div id="guide-rows"></div></div>
+    </div>
+  </div>
+</div>
+
+<div id="bd"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+<script>
+/* ── mobile channel drawer ── */
+(function(){
+  var btn=document.getElementById('ham'),side=document.getElementById('side'),bd=document.getElementById('bd');
+  function close(){btn.setAttribute('aria-expanded','false');side.classList.remove('open');bd.classList.remove('open');}
+  function open(){btn.setAttribute('aria-expanded','true');side.classList.add('open');bd.classList.add('open');}
+  btn.addEventListener('click',function(){side.classList.contains('open')?close():open();});
+  bd.addEventListener('click',close);
+  side.addEventListener('click',function(e){if(e.target.closest('.ch'))close();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+})();
+
+/* ── player ── */
+var channels=[],cur=0,hls=null,v=document.getElementById('v');
+var unmute=document.getElementById('unmute');
+var guideEl=document.getElementById('guide');
+var statusEl=document.getElementById('status');
+
+/* central status/debug surface: shows on the player AND logs to the browser console.
+   kind: 'load' (tuning), 'err' (offline/fatal), '' (clear). */
+function setStatus(msg,kind,sub){
+  if(!msg){statusEl.className='';statusEl.classList.remove('show');statusEl.innerHTML='';return;}
+  statusEl.className=(kind||'')+' show';
+  statusEl.innerHTML=msg+(sub?'<span class="sub">'+sub+'</span>':'');
+}
+function chLabel(ch){return 'CH '+ch.num+' '+(ch.name||'').toUpperCase();}
+/* friendly explanation for an hls.js error detail */
+function hlsReason(d){
+  var det=d&&d.details||'';
+  if(det.indexOf('manifestLoad')===0||det.indexOf('manifestParsing')===0)
+    return 'channel offline - no playout yet (still indexing or empty collection)';
+  if(det.indexOf('level')===0||det.indexOf('fragLoad')===0)
+    return 'stream stalled - transcoder catching up';
+  if(d&&d.response&&d.response.code) return 'HTTP '+d.response.code+' on '+det;
+  return det||'unknown error';
+}
+
+function syncUnmute(){ unmute.classList.toggle('show', v.muted || v.volume===0); }
+unmute.addEventListener('click',function(){ v.muted=false; if(v.volume===0)v.volume=1; v.play().catch(function(){}); syncUnmute(); });
+v.addEventListener('volumechange', syncUnmute);
+
+function xtime(s){
+  var m=s.match(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\s*([+-]\d{4})?/);if(!m)return 0;
+  var d=Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6]);
+  if(m[7]){var sg=m[7].charAt(0)==='-'?1:-1;d+=sg*((+m[7].substr(1,2))*60+(+m[7].substr(3,2)))*60000;}
+  return d;
+}
+function fmtT(ms){var d=new Date(ms),h=d.getHours(),m=d.getMinutes(),ap=h<12?'a':'p';h=h%12;if(!h)h=12;return h+':'+(m<10?'0':'')+m+ap;}
+function decodeEnt(s){var t=document.createElement('textarea');t.innerHTML=s;return t.value;}
+function esc(s){return s.replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+
+function updateNow(){
+  var ch=channels[cur];if(!ch||ch.guide||!ch.id)return;
+  fetch('/iptv/xmltv.xml').then(function(r){return r.text();}).then(function(t){
+    var now=Date.now(),re=/<programme[^>]*start="([^"]+)"[^>]*stop="([^"]+)"[^>]*channel="([^"]+)"[^>]*>([\s\S]*?)<\/programme>/g,m,best=null;
+    while((m=re.exec(t))){if(m[3]===ch.id&&xtime(m[1])<=now&&xtime(m[2])>now){best=m[4];break;}}
+    var tt=best?(best.match(/<title[^>]*>([\s\S]*?)<\/title>/)||[])[1]:null;
+    document.getElementById('now').textContent=tt?('NOW: '+decodeEnt(tt)):('24/7 '+ch.name);
+  }).catch(function(){});
+}
+
+/* ===== TV GUIDE ===== */
+var guideScrollTimer=null,guideRefreshTimer=null,guidePos=0,guideManual=0,guideManualTimer=null;
+function buildGuide(){
+  fetch('/iptv/xmltv.xml').then(function(r){return r.text();}).then(function(t){
+    var map={},re=/<programme[^>]*start="([^"]+)"[^>]*stop="([^"]+)"[^>]*channel="([^"]+)"[^>]*>([\s\S]*?)<\/programme>/g,m;
+    while((m=re.exec(t))){
+      var tt=(m[4].match(/<title[^>]*>([\s\S]*?)<\/title>/)||[])[1]||'';
+      (map[m[3]]=map[m[3]]||[]).push({s:xtime(m[1]),e:xtime(m[2]),title:decodeEnt(tt)});
+    }
+    var now=Date.now(),html='';
+    for(var i=0;i<channels.length;i++){
+      var c=channels[i]; if(c.guide) continue;
+      var list=(map[c.id]||[]).sort(function(a,b){return a.s-b.s;});
+      var nowP=null,nextP=null;
+      for(var j=0;j<list.length;j++){
+        if(list[j].s<=now&&list[j].e>now){nowP=list[j];nextP=list[j+1]||null;break;}
+        if(list[j].s>now){nextP=list[j];break;}
+      }
+      var nowTxt=nowP?nowP.title:('24/7 '+c.name);
+      var nowTm=nowP?(fmtT(nowP.s)+'-'+fmtT(nowP.e)):'';
+      html+='<div class="grow'+(i===cur?' cur':'')+'" data-i="'+i+'">'
+        +'<div class="gnum">'+c.num+'</div><div class="gbody">'
+        +'<div class="gname">'+esc(c.name.toUpperCase())+'</div>'
+        +'<div class="nowln"><span class="tm">'+nowTm+'</span> '+esc(nowTxt)+'</div>'
+        +(nextP?'<div class="nextln">NEXT <span class="tm">'+fmtT(nextP.s)+'</span> '+esc(nextP.title)+'</div>':'')
+        +'</div></div>';
+    }
+    var rows=document.getElementById('guide-rows');rows.innerHTML=html;
+    var els=rows.querySelectorAll('.grow');
+    for(var k=0;k<els.length;k++){(function(el){el.onclick=function(){tune(+el.getAttribute('data-i'));};})(els[k]);}
+  }).catch(function(){});
+}
+function startGuideAuto(){
+  stopGuideAuto();
+  var scroll=document.getElementById('guide-scroll'),rows=document.getElementById('guide-rows');
+  guidePos=0;guideManual=0;
+  guideScrollTimer=setInterval(function(){
+    var max=rows.scrollHeight-scroll.clientHeight;
+    if(max<=4){guidePos=0;rows.style.transform='translateY(0)';return;}
+    if(!guideManual){ guidePos+=0.4; if(guidePos>max+40)guidePos=0; }   /* auto-scroll cycles 99 -> 1; paused while the user wheels */
+    rows.style.transform='translateY(-'+Math.max(0,Math.min(guidePos,max))+'px)';
+  },40);
+  guideRefreshTimer=setInterval(buildGuide,30000);
+}
+function stopGuideAuto(){clearInterval(guideScrollTimer);clearInterval(guideRefreshTimer);}
+
+/* mouse-wheel scrolls the guide manually and CYCLES (past ch 99 wraps to ch 1, and back);
+   auto-scroll picks right back up ~2.5s after you stop wheeling */
+(function(){
+  var scroll=document.getElementById('guide-scroll');
+  scroll.addEventListener('wheel',function(e){
+    var rows=document.getElementById('guide-rows');
+    var max=rows.scrollHeight-scroll.clientHeight; if(max<=4) return;
+    e.preventDefault();
+    guideManual=1; clearTimeout(guideManualTimer);
+    var span=max+40;                                 /* full cycle = list height + small gap */
+    guidePos+=e.deltaY;
+    if(guidePos>=span) guidePos-=span;               /* wheeled past channel 99 -> cycle to channel 1 */
+    else if(guidePos<0) guidePos+=span;              /* wheeled above channel 1 -> cycle to channel 99 */
+    rows.style.transform='translateY(-'+Math.max(0,Math.min(guidePos,max))+'px)';
+    guideManualTimer=setTimeout(function(){guideManual=0;},2500);
+  },{passive:false});
+})();
+setInterval(function(){
+  var el=document.getElementById('guide-clock');if(!el)return;
+  var d=new Date(),h=d.getHours(),m=d.getMinutes(),sc=d.getSeconds(),ap=h<12?'AM':'PM';h=h%12;if(!h)h=12;
+  el.textContent=h+':'+(m<10?'0':'')+m+':'+(sc<10?'0':'')+sc+' '+ap;
+},1000);
+
+/* live-TV behavior: auto-tune on load + auto-skip a dead channel to the next working one.
+   ErsatzTV channels need a few seconds to warm up, so we skip on a TIMEOUT (no video after a
+   grace period), not on the first transient error during startup. */
+var autoTries=0,autoTimer=null;
+function nextReal(from){
+  for(var i=from+1;i<channels.length;i++){ if(!channels[i].guide) return i; }
+  for(var j=0;j<channels.length;j++){ if(!channels[j].guide) return j; }   /* wrap past the guide */
+  return -1;
+}
+function autoStart(){ var n=nextReal(0); if(n>=0) tune(n,true); else tune(0); }
+
+function tune(i,auto){
+  if(!channels.length||i<0||i>=channels.length)return;
+  cur=i;var ch=channels[cur];
+  document.getElementById('bugch').textContent=ch.guide?'TV GUIDE':('CH '+ch.num+'  '+ch.name.toUpperCase());
+  var els=document.querySelectorAll('.ch');
+  for(var k=0;k<els.length;k++){els[k].classList.toggle('active',k===cur);}
+
+  if(ch.guide){
+    /* keep whatever channel is playing running BEHIND a translucent guide (guide + channel together) */
+    clearTimeout(autoTimer);
+    unmute.classList.remove('show');setStatus('');
+    document.body.classList.add('on-guide');
+    document.getElementById('now').textContent='Guide - all channels';
+    guideEl.classList.add('show');
+    buildGuide();startGuideAuto();
+    return;
+  }
+  document.body.classList.remove('on-guide');
+  guideEl.classList.remove('show');stopGuideAuto();
+  v.style.display='block';
+  var url='/iptv/channel/'+ch.num+'.m3u8';
+  setStatus(chLabel(ch),'load',auto?'finding a live channel...':'tuning in...');
+  console.log('[TV] tune',ch.num,ch.name,url);
+  /* skip ONLY if the channel produces no video within the grace window (warm-up safe) */
+  clearTimeout(autoTimer);
+  function skipDead(){ if(auto&&autoTries<30){ autoTries++; var nx=nextReal(cur); if(nx>=0){ console.log('[TV] auto-skip (no video) ch',ch.num,'->',channels[nx].num); tune(nx,true); } } }
+  function playing(){ clearTimeout(autoTimer); autoTries=0; setStatus(''); }   /* real video arrived */
+  if(auto){ autoTimer=setTimeout(skipDead,13000); }
+  if(hls){hls.destroy();hls=null;}
+  if(window.Hls&&Hls.isSupported()){
+    hls=new Hls({liveSyncDurationCount:2,maxBufferLength:14,startFragPrefetch:true,
+                 manifestLoadingMaxRetry:20,manifestLoadingRetryDelay:600,manifestLoadingMaxRetryTimeout:20000,
+                 levelLoadingMaxRetry:20,levelLoadingRetryDelay:600});
+    hls.loadSource(url);hls.attachMedia(v);
+    hls.on(Hls.Events.MANIFEST_PARSED,function(){
+      console.log('[TV] manifest OK',ch.num,ch.name);
+      v.muted=!!auto;                                            // autoplay on landing must start muted
+      v.play().then(syncUnmute).catch(function(){ v.muted=true; v.play().catch(function(){}); syncUnmute(); });
+    });
+    hls.on(Hls.Events.FRAG_LOADED,playing);                      /* first segment = channel is alive */
+    hls.on(Hls.Events.ERROR,function(e,d){
+      var reason=hlsReason(d);
+      (d&&d.fatal?console.error:console.warn)('[TV] HLS',(d&&d.fatal)?'FATAL':'warn',ch.num,ch.name,'| '+(d&&d.details),'| '+reason,d);
+      if(d&&d.fatal){                                            /* don't skip here - the warm-up timer decides */
+        setStatus(chLabel(ch)+(auto?'':' OFFLINE'),auto?'load':'err',reason+(auto?' - warming up...':' - retrying...'));
+        setTimeout(function(){try{hls.startLoad();hls.loadSource(url);}catch(_){}} ,2500);
+      }
+    });
+  } else if(v.canPlayType('application/vnd.apple.mpegurl')){
+    v.src=url;v.muted=!!auto;
+    v.addEventListener('playing',playing,{once:true});
+    v.addEventListener('error',function(){ setStatus(chLabel(ch)+(auto?'':' OFFLINE'),auto?'load':'err','stream error'+(auto?' - warming up...':' - retrying...')); },{once:true});
+    v.play().then(syncUnmute).catch(function(){ v.muted=true; v.play().catch(function(){}); syncUnmute(); });
+  }
+  updateNow();
+}
+
+function render(){
+  var L=document.getElementById('list');L.innerHTML='';
+  for(var i=0;i<channels.length;i++){(function(idx){
+    var ch=channels[idx];
+    var d=document.createElement('div');d.className='ch'+(ch.guide?' guide':'');
+    d.innerHTML='<span class="num">'+ch.num+'</span><span>'+ch.name+'</span>';
+    d.onclick=function(){tune(idx);};L.appendChild(d);
+  })(i);}
+}
+
+function loadChannels(){
+  fetch('/iptv/channels.m3u').then(function(r){return r.text();}).then(function(t){
+    var lines=t.split('\n'),out=[];
+    for(var i=0;i<lines.length;i++){
+      var a=lines[i].match(/tvg-chno="([^"]+)"/),b=lines[i].match(/tvg-name="([^"]+)"/),c=lines[i].match(/tvg-id="([^"]+)"/);
+      if(a&&b)out.push({num:a[1],name:b[1],id:c?c[1]:''});
+    }
+    out.sort(function(x,y){return(+x.num)-(+y.num);});
+    out.unshift({num:'1',name:'TV Guide',id:'',guide:true});   // channel 1 = the guide
+    channels=out;render();autoStart();                          // live TV: auto-tune the first working channel
+  });
+}
+
+/* keyboard: arrows flip, digits jump (buffered for 10/11/12/99) */
+var numBuf='',numTimer=null;
+function jumpNum(d){
+  numBuf+=d;clearTimeout(numTimer);
+  numTimer=setTimeout(function(){
+    for(var i=0;i<channels.length;i++){if(channels[i].num===numBuf){tune(i);break;}}
+    numBuf='';
+  },1000);
+}
+document.addEventListener('keydown',function(e){
+  if(e.target.tagName==='INPUT')return;
+  if(e.key==='ArrowDown'){tune((cur+1)%channels.length);}
+  else if(e.key==='ArrowUp'){tune((cur-1+channels.length)%channels.length);}
+  else if(/^[0-9]$/.test(e.key)){jumpNum(e.key);}
+});
+
+loadChannels();
+setInterval(updateNow,30000);
+</script>
+</body>
+</html>

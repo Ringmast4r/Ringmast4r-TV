@@ -1,0 +1,6 @@
+*.log
+*.sqlite3
+commercials/
+media/
+.DS_Store
+Thumbs.db
