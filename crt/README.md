@@ -30,6 +30,9 @@ media library ──> ErsatzTV engine (:8409, full-res, feeds the web player)
   tuned to it (NVENC `scale_cuda` inside the ErsatzTV container). It waits 0.8 s
   before starting a channel, so channels you flip past never start an encode,
   and it stops the encode 20 s after the TV stops asking (guide, local channel, off).
+  It also reads the TV's current channel from FieldStation42 (`TV_HOST:4242/player/status`)
+  and keeps the streamed channels just above and below it encoding, so channel up/down
+  lands on a running stream in about 1 s instead of 4-7 s.
 - **One numbering:** each engine channel number is the CRT dial number, so the web
   player and the tube TV agree. A CRT stream URL is `/iptv/channel/<dial #>.m3u8`.
 - **The guide digest exists because parsing the full XMLTV on the Pi took ~20 s**
