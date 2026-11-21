@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "StarTrek",
+    "network_long_name": "Star Trek",
+    "channel_number": 46,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/46.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "Star Trek"
+      }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "SciFiTV",
+    "network_long_name": "Sci-Fi TV",
+    "channel_number": 53,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/53.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "Sci-Fi TV"
+      }
+    ]
+  }
+}

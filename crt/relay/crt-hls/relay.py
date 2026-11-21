@@ -15,8 +15,8 @@ HLSROOT = "/var/lib/docker/volumes/ersatztv-config/_data/crt"
 CROOT = "/root/.local/share/ersatztv/crt"
 MARK = "CRTHLS"
 TV_STATUS = ["http://TV_HOST:4242/player/status"]
-STREAMED = set(range(5, 43))   # dial numbers served here (1 = guide, 2-4 = files on the Pi)
-DIAL_MAX = 42
+STREAMED = set(range(5, 56))   # dial numbers served here (1 = guide, 2-4 = files on the Pi)
+DIAL_MAX = 55
 DEBOUNCE = 0.8
 SETTLE = 1.5                   # seconds on a channel before its neighbours are warmed
 IDLE_STOP = 20

@@ -127,25 +127,29 @@ exclusively and uses the perceptual `amixer -M` volume scale.
 
 Dial number = engine number = web player number for every streamed channel.
 
-| # | Channel | # | Channel | # | Channel |
-|--:|---------|--:|---------|--:|---------|
-| 1 | Guide (local) | 15 | Movies | 29 | Spy |
-| 2 | The Matrix (local) | 16 | Action | 30 | Martial Arts |
-| 3 | The Matrix Reloaded (local) | 17 | Comedy | 31 | Adult Swim |
-| 4 | The Matrix Revolutions (local) | 18 | Kids | 32 | Holiday |
-| 5 | TV Series | 19 | Adventure | 33 | Drama |
-| 6 | Documentaries | 20 | Thriller | 34 | History |
-| 7 | Hack The Planet | 21 | 90s Nostalgia | 35 | Family |
-| 8 | Horror | 22 | Fantasy | 36 | Biopic |
-| 9 | Cartoons | 23 | Mystery | 37 | Romance |
-| 10 | Sci-Fi | 24 | War | 38 | Zombie |
-| 11 | Crime | 25 | Vampire | 39 | Monster |
-| 12 | Westerns | 26 | Superhero | 40 | Time Travel |
-| 13 | Music Video | 27 | Dystopian | 41 | Infomercials |
-| 14 | Extended Cut | 28 | Alien | 42 | Commercials |
+| # | Channel | # | Channel | # | Channel | # | Channel |
+|--:|---------|--:|---------|--:|---------|--:|---------|
+| 1 | Guide (local) | 15 | Movies | 29 | Spy | 43 | Disney |
+| 2 | The Matrix | 16 | Action | 30 | Martial Arts | 44 | Pixar |
+| 3 | The Matrix Reloaded | 17 | Comedy | 31 | Adult Swim | 45 | James Bond 007 |
+| 4 | The Matrix Revolutions | 18 | Kids | 32 | Holiday | 46 | Star Trek |
+| 5 | TV Series | 19 | Adventure | 33 | Drama | 47 | Saturday Morning |
+| 6 | Documentaries | 20 | Thriller | 34 | History | 48 | The X-Files |
+| 7 | Hack The Planet | 21 | 90s Nostalgia | 35 | Family | 49 | Stephen King |
+| 8 | Horror | 22 | Fantasy | 36 | Biopic | 50 | Slashers |
+| 9 | Cartoons | 23 | Mystery | 37 | Romance | 51 | Tarantino |
+| 10 | Sci-Fi | 24 | War | 38 | Zombie | 52 | Movie Sagas |
+| 11 | Crime | 25 | Vampire | 39 | Monster | 53 | Sci-Fi TV |
+| 12 | Westerns | 26 | Superhero | 40 | Time Travel | 54 | Prime Time |
+| 13 | Music Video | 27 | Dystopian | 41 | Infomercials | 55 | Science |
+| 14 | Extended Cut | 28 | Alien | 42 | Commercials | | |
 
-Channels 2-4 are `loop` channels playing 480p files stored on the Pi, so they
-tune instantly. Everything from 5 up streams from the engine.
+On the CRT, channels 2-4 are `loop` channels playing 480p files stored on the Pi,
+so they tune instantly; the engine has its own 2-4 (one film each) for the web
+player. Everything from 5 up streams from the engine. The new channels are
+tag-driven smart collections (`tag:disney`, `tag:"star-trek"`, `tag:science`, ...):
+the engine's search splits tags on hyphens, so pick tag words that no other
+channel's query uses.
 
 <a id="gotchas"></a>
 ## `> gotchas`
@@ -198,6 +202,6 @@ tune instantly. Everything from 5 up streams from the engine.
 | `fieldstation42/UPSTREAM_COMMIT` | The FieldStation42 commit the patch applies to |
 | `fieldstation42/fieldstation42-changes.patch` | All changes to upstream files |
 | `fieldstation42/new-files/` | Files added to the FieldStation42 tree |
-| `fieldstation42/confs/` | The 42 channel configs (`ENGINE_HOST` placeholder) and `main_config.json` |
+| `fieldstation42/confs/` | The 55 channel configs (`ENGINE_HOST` placeholder) and `main_config.json` |
 | `relay/crt-hls/` | The 480p relay and its systemd unit |
 | `relay/guide-digest/` | The guide digest and its systemd unit (`crt-relay.service`) |

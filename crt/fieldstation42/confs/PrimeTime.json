@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "PrimeTime",
+    "network_long_name": "Prime Time",
+    "channel_number": 54,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/54.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "Prime Time"
+      }
+    ]
+  }
+}

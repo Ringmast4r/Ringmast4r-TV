@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "XFiles",
+    "network_long_name": "The X-Files",
+    "channel_number": 48,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/48.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "The X-Files"
+      }
+    ]
+  }
+}
