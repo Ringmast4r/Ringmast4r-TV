@@ -1,0 +1,12 @@
+# /etc/systemd/system/crt-relay.service
+[Unit]
+Description=CRT 480p GPU relay (ErsatzTV -> Pi)
+After=docker.service network-online.target
+Wants=docker.service
+[Service]
+ExecStart=/usr/bin/python3 /opt/crt-relay/relay.py
+Restart=always
+RestartSec=2
+User=root
+[Install]
+WantedBy=multi-user.target

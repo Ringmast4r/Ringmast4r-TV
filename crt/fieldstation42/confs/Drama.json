@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "Drama",
+    "network_long_name": "Drama",
+    "channel_number": 33,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/31.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "Drama"
+      }
+    ]
+  }
+}

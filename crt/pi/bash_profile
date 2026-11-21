@@ -1,0 +1,5 @@
+[ -f ~/.bashrc ] && . ~/.bashrc
+if [ "$(tty)" = "/dev/tty1" ]; then
+  sudo sh -c 'echo on > /sys/class/drm/card0-Composite-1/status' 2>/dev/null
+  exec startx -- -nocursor > /tmp/startx.log 2>&1
+fi

@@ -1,0 +1,9 @@
+{
+  "station_conf": {
+    "network_name": "Matrix3",
+    "network_type": "loop",
+    "channel_number": 4,
+    "content_dir": "catalog/Matrix3_content",
+    "network_long_name": "The Matrix Revolutions"
+  }
+}

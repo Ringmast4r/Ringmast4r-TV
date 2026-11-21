@@ -1,0 +1,10 @@
+# Lines that matter in /boot/firmware/config.txt (Raspberry Pi OS Bookworm, Pi 3B)
+
+# Composite (NTSC 720x480i) out of the 3.5 mm AV jack:
+dtoverlay=vc4-kms-v3d,composite=1
+
+# Stop an attached DSI screen (or HDMI probe) from stealing the display:
+display_auto_detect=0
+
+arm_64bit=1
+dtparam=audio=on

@@ -133,4 +133,4 @@ no built-in auth, and only serve content you have the rights to distribute.
   host.
 - The same engine can feed a real CRT: run a small HLS relay and a Raspberry
   Pi player (FieldStation42) for hardware channel flipping with an IR remote.
-  Out of scope here, but the engine side is identical.
+  Full setup in [../crt/README.md](../crt/README.md).

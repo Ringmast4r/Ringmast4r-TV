@@ -1,0 +1,1 @@
+0 3 */3 * * cd /home/pi/FieldStation42 && env/bin/python station_42.py -w >> /tmp/sched_cron.log 2>&1 && pkill -f field_player.py

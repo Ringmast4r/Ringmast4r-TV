@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "Adventure",
+    "network_long_name": "Adventure",
+    "channel_number": 19,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/18.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "Adventure"
+      }
+    ]
+  }
+}

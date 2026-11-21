@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "Docs",
+    "network_long_name": "Docs",
+    "channel_number": 6,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/4.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "Docs"
+      }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "Time Travel",
+    "network_long_name": "Time Travel",
+    "channel_number": 40,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/38.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "Time Travel"
+      }
+    ]
+  }
+}

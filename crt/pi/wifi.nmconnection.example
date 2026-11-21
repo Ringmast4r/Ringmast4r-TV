@@ -1,0 +1,24 @@
+# /etc/NetworkManager/system-connections/home-wifi.nmconnection  (root:root, chmod 600, then: sudo nmcli con reload)
+# Set the Wi-Fi country first or the radio stays rfkill-blocked:  sudo raspi-config nonint do_wifi_country US
+[connection]
+id=home-wifi
+type=wifi
+autoconnect=true
+autoconnect-retries=0
+
+[wifi]
+mode=infrastructure
+ssid=YOUR_SSID
+# Pin to one adapter (e.g. a USB dongle) by its MAC; delete this line to use any Wi-Fi device.
+mac-address=AA:BB:CC:DD:EE:FF
+powersave=2
+
+[wifi-security]
+key-mgmt=wpa-psk
+psk=YOUR_WIFI_PASSWORD
+
+[ipv4]
+method=auto
+
+[ipv6]
+method=auto

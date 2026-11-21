@@ -1,0 +1,9 @@
+{
+  "station_conf": {
+    "network_name": "Matrix",
+    "network_type": "loop",
+    "channel_number": 2,
+    "content_dir": "catalog/Matrix_content",
+    "network_long_name": "The Matrix"
+  }
+}

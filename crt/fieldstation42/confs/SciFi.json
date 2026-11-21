@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "SciFi",
+    "network_long_name": "SciFi",
+    "channel_number": 10,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/8.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "SciFi"
+      }
+    ]
+  }
+}

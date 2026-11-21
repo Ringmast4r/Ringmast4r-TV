@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "Kids",
+    "network_long_name": "Kids",
+    "channel_number": 18,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/14.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "Kids"
+      }
+    ]
+  }
+}

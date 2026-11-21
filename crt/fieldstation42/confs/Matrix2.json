@@ -1,0 +1,9 @@
+{
+  "station_conf": {
+    "network_name": "Matrix2",
+    "network_type": "loop",
+    "channel_number": 3,
+    "content_dir": "catalog/Matrix2_content",
+    "network_long_name": "The Matrix Reloaded"
+  }
+}

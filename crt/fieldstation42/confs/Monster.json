@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "Monster",
+    "network_long_name": "Monster",
+    "channel_number": 39,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/37.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "Monster"
+      }
+    ]
+  }
+}

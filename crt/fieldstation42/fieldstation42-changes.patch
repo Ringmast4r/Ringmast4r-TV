@@ -1,0 +1,424 @@
+diff --git a/field_player.py b/field_player.py
+index 116932f..8457988 100644
+--- a/field_player.py
++++ b/field_player.py
+@@ -22,6 +22,7 @@ from fs42.reception import (
+     long_change_effect,
+     short_change_effect,
+     none_change_effect,
++    flick_change_effect,
+ )
+ from fs42.live_schedule_agent import LiveScheduleAgent
+ 
+diff --git a/fs42/fs42_server/api/player.py b/fs42/fs42_server/api/player.py
+index c27ac21..675f311 100644
+--- a/fs42/fs42_server/api/player.py
++++ b/fs42/fs42_server/api/player.py
+@@ -272,14 +272,14 @@ async def show_ticker(request: Request):
+ @router.get("/volume/up")
+ @router.post("/volume/up")
+ async def volume_up():
+-    """Increase volume by 5%"""
++    """Increase volume by 10%"""
+     return await _control_volume("up")
+ 
+ 
+ @router.get("/volume/down")
+ @router.post("/volume/down")
+ async def volume_down():
+-    """Decrease volume by 5%"""
++    """Decrease volume by 10%"""
+     return await _control_volume("down")
+ 
+ 
+@@ -329,7 +329,7 @@ async def _volume_amixer(action: str):
+         if action == "up":
+             # Check current volume before increasing
+             get_status = subprocess.run(
+-                ["amixer", "sget", mixer],
++                ["amixer", "-M", "sget", mixer],
+                 capture_output=True, text=True, check=True
+             )
+             current_vol_match = re.search(r'\[(\d+)%\]', get_status.stdout)
+@@ -340,19 +340,19 @@ async def _volume_amixer(action: str):
+                 return {"action": action, "method": "amixer", "status": "capped", "message": "Volume already at maximum (100%)", "volume": "100%"}
+             elif current_vol > 95:
+                 # Set to exactly 100% if we're close
+-                cmd = ["amixer", "sset", mixer, "100%"]
++                cmd = ["amixer", "-M", "sset", mixer, "100%"]
+                 message = "Volume set to maximum (100%)"
+             else:
+-                cmd = ["amixer", "sset", mixer, "5%+"]
+-                message = "Volume increased by 5%"
++                cmd = ["amixer", "-M", "sset", mixer, "10%+"]
++                message = "Volume increased by 10%"
+         elif action == "down":
+-            cmd = ["amixer", "sset", mixer, "5%-"]
+-            message = "Volume decreased by 5%"
++            cmd = ["amixer", "-M", "sset", mixer, "10%-"]
++            message = "Volume decreased by 10%"
+         elif action == "mute":
+             # For mute, we need to check current state and toggle
+             # First get current mute status
+             get_status = subprocess.run(
+-                ["amixer", "sget", mixer],
++                ["amixer", "-M", "sget", mixer],
+                 capture_output=True, text=True, check=True
+             )
+             # Check if currently muted - look for [off] in output
+@@ -360,7 +360,7 @@ async def _volume_amixer(action: str):
+ 
+             # Toggle: if muted, unmute; if unmuted, mute
+             mute_action = "unmute" if is_muted else "mute"
+-            cmd = ["amixer", "sset", mixer, mute_action]
++            cmd = ["amixer", "-M", "sset", mixer, mute_action]
+             message = f"Mute {'off' if is_muted else 'on'}"
+         else:
+             raise ValueError(f"Invalid action: {action}")
+@@ -377,7 +377,7 @@ async def _volume_amixer(action: str):
+             if action == "up":
+                 # Check current volume before increasing
+                 get_status = subprocess.run(
+-                    ["amixer", "sget", mixer],
++                    ["amixer", "-M", "sget", mixer],
+                     capture_output=True, text=True, check=True
+                 )
+                 current_vol_match = re.search(r'\[(\d+)%\]', get_status.stdout)
+@@ -388,23 +388,23 @@ async def _volume_amixer(action: str):
+                     return {"action": action, "method": "amixer", "status": "capped", "message": "Volume already at maximum (100%)", "volume": "100%"}
+                 elif current_vol > 95:
+                     # Set to exactly 100% if we're close
+-                    cmd = ["amixer", "sset", mixer, "100%"]
++                    cmd = ["amixer", "-M", "sset", mixer, "100%"]
+                     message = "Volume set to maximum (100%)"
+                 else:
+-                    cmd = ["amixer", "sset", mixer, "5%+"]
+-                    message = "Volume increased by 5%"
++                    cmd = ["amixer", "-M", "sset", mixer, "10%+"]
++                    message = "Volume increased by 10%"
+             elif action == "down":
+-                cmd = ["amixer", "sset", mixer, "5%-"]
+-                message = "Volume decreased by 5%"
++                cmd = ["amixer", "-M", "sset", mixer, "10%-"]
++                message = "Volume decreased by 10%"
+             elif action == "mute":
+                 # For mute with PCM, check current state and toggle
+                 get_status = subprocess.run(
+-                    ["amixer", "sget", mixer],
++                    ["amixer", "-M", "sget", mixer],
+                     capture_output=True, text=True, check=True
+                 )
+                 is_muted = "[off]" in get_status.stdout
+                 mute_action = "unmute" if is_muted else "mute"
+-                cmd = ["amixer", "sset", mixer, mute_action]
++                cmd = ["amixer", "-M", "sset", mixer, mute_action]
+                 message = f"Mute {'off' if is_muted else 'on'}"
+ 
+             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+@@ -432,10 +432,10 @@ async def _volume_pulseaudio(action: str):
+                 message = "Volume set to maximum (100%)"
+             else:
+                 cmd = ["pactl", "set-sink-volume", "@DEFAULT_SINK@", "+5%"]
+-                message = "Volume increased by 5%"
++                message = "Volume increased by 10%"
+         elif action == "down":
+             cmd = ["pactl", "set-sink-volume", "@DEFAULT_SINK@", "-5%"]
+-            message = "Volume decreased by 5%"
++            message = "Volume decreased by 10%"
+         elif action == "mute":
+             cmd = ["pactl", "set-sink-mute", "@DEFAULT_SINK@", "toggle"]
+             message = "Mute toggled"
+@@ -463,10 +463,10 @@ async def _volume_wireplumber(action: str):
+             # wpctl has a built-in limit option
+             # Using --limit=1.0 caps volume at 100%
+             cmd = ["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "0.05+", "--limit=1.0"]
+-            message = "Volume increased by 5%"
++            message = "Volume increased by 10%"
+         elif action == "down":
+             cmd = ["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "0.05-"]
+-            message = "Volume decreased by 5%"
++            message = "Volume decreased by 10%"
+         elif action == "mute":
+             cmd = ["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"]
+             message = "Mute toggled"
+diff --git a/fs42/fs42_server/api/schedules.py b/fs42/fs42_server/api/schedules.py
+index 165e50b..70c1f59 100644
+--- a/fs42/fs42_server/api/schedules.py
++++ b/fs42/fs42_server/api/schedules.py
+@@ -68,5 +68,13 @@ async def get_schedule(network_name: str, start: str = None, end: str = None):
+         except ValueError:
+             return {"error": "Invalid date format. Use ISO format (YYYY-MM-DDTHH:MM:SS) for start and end."}
+ 
++    if conf and conf.get("network_type") == "streaming":
++        try:
++            from fs42 import ersatz_guide
++            _b = ersatz_guide.schedule_blocks(conf, sdt, edt)
++            if _b is not None:
++                return {"network_name": network_name, "schedule_blocks": _b}
++        except Exception:
++            pass
+     schedule_blocks = LiquidAPI.get_blocks(conf, sdt, edt)
+     return {"network_name": network_name, "schedule_blocks": schedule_blocks}
+diff --git a/fs42/fs42_server/api/summary.py b/fs42/fs42_server/api/summary.py
+index 143dcbe..d995f8f 100644
+--- a/fs42/fs42_server/api/summary.py
++++ b/fs42/fs42_server/api/summary.py
+@@ -11,6 +11,10 @@ async def get_summary():
+     for station in StationManager().stations:
+         if station["_has_schedule"]:
+             sched_summary = LiquidManager().get_summary_json(network_name=station["network_name"])
++        elif station.get("network_type") == "streaming":
++            import time as _t
++            _n = int(_t.time())
++            sched_summary = {"network_name": station["network_name"], "start": _n, "end": _n + 86400}
+         else:
+             sched_summary = {"network_name": station["network_name"], "start": 0, "end": 0}
+         summary = {
+diff --git a/fs42/fs42_server/static/guide.html b/fs42/fs42_server/static/guide.html
+index a9031e4..2e21df9 100644
+--- a/fs42/fs42_server/static/guide.html
++++ b/fs42/fs42_server/static/guide.html
+@@ -47,7 +47,7 @@
+ 
+             const content = `
+                 <div class="pure-u-1">
+-                    <iframe id="guide-frame" src="/static/guide_frame.html" title="Guide">
++                    <iframe id="guide-frame" src="/static/guide_frame.html?v=5" title="Guide">
+                         <p>Your browser does not support iframes. Please <a href="/static/guide_frame.html">click here to view the Guide</a>.</p>
+                     </iframe>
+                 </div>
+diff --git a/fs42/fs42_server/static/guide_frame.html b/fs42/fs42_server/static/guide_frame.html
+index c6ed8ab..6a11b69 100644
+--- a/fs42/fs42_server/static/guide_frame.html
++++ b/fs42/fs42_server/static/guide_frame.html
+@@ -155,9 +155,9 @@
+             for (let i = 0; i <= totalSlots; i++) {
+                 const slotTime = new Date(guideStartTime.getTime() + (i * 30 * 60 * 1000));
+                 const timeStr = slotTime.toLocaleTimeString('en-US', { 
+-                    hour: '2-digit', 
++                    hour: 'numeric', 
+                     minute: '2-digit',
+-                    hour12: false 
++                    hour12: true 
+                 });
+                 const slotLeft = `calc(120px + (100% - 120px) * ${i} / ${totalSlots})`;
+                 timelineHTML += `<div class="timeline-slot" style="left: ${slotLeft}; width: ${slotWidth};">${timeStr}</div>`;
+@@ -197,7 +197,7 @@
+                 const channelNumber = station.channel_number || '?';
+                 const displayName = station.network_long_name || station.network_name;
+                 stationsHTML += `
+-                    <div class="station-row">
++                    <div class="station-row" data-channel="${channelNumber}" style="cursor:pointer">
+                         <div class="station-name">
+                             <div class="channel-number">${channelNumber}</div>
+                             <div class="network-name">${displayName}</div>
+@@ -230,6 +230,7 @@
+                 const station = stations[stationIndex];
+                 const stationRow = document.createElement('div');
+                 stationRow.className = 'guide-row';
++                if (station.channel_number !== undefined && station.channel_number !== null) { stationRow.dataset.channel = station.channel_number; stationRow.style.cursor = 'pointer'; }
+ 
+                 // Check if station has schedule
+                 if (!station.has_schedule) {
+@@ -336,9 +337,9 @@
+             
+             const title = block.title || 'Untitled';
+             const startTime = blockStart.toLocaleTimeString('en-US', { 
+-                hour: '2-digit', 
++                hour: 'numeric', 
+                 minute: '2-digit',
+-                hour12: false 
++                hour12: true 
+             });
+             
+             programDiv.innerHTML = `
+@@ -385,10 +386,10 @@
+                 currentTime = new Date();
+                 document.getElementById('current-time-display').textContent = 
+                     currentTime.toLocaleTimeString('en-US', { 
+-                        hour: '2-digit', 
++                        hour: 'numeric', 
+                         minute: '2-digit', 
+                         second: '2-digit',
+-                        hour12: false 
++                        hour12: true 
+                     });
+                 updateTimelineMarker();
+             }, 1000);
+@@ -416,6 +417,7 @@
+             }
+ 
+             verticalScrollInterval = setInterval(() => {
++                if (window._userScroll && (Date.now() - window._userScroll) < 4000) return;
+                 if (autoScrollEnabled) {
+                     const stationsColumn = document.getElementById('stations-column');
+                     const guideGridContainer = document.querySelector('.guide-grid-container');
+@@ -641,7 +643,66 @@
+             }
+         }
+ 
+-    </script>
++    
++// --- click-to-tune (LOCAL MOD): click a channel row to tune the CRT ---
++(function(){
++  function wire(){
++    var col=document.getElementById('stations-column');
++    if(!col){ setTimeout(wire,500); return; }
++    if(col._tuneWired) return; col._tuneWired=true;
++    col.addEventListener('click', function(e){
++      var row=e.target.closest('.station-row[data-channel]');
++      if(!row) return;
++      var ch=parseInt(row.dataset.channel,10);
++      if(isNaN(ch)) return;
++      row.classList.add('tuned-flash');
++      setTimeout(function(){ row.classList.remove('tuned-flash'); },700);
++      try{ var r=window.fs42Api.get('player/channels/'+ch); if(r&&r.catch){ r.catch(function(err){ console.error('tune failed',ch,err); }); } }
++      catch(err){ console.error('tune failed',ch,err); }
++    });
++  }
++  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',wire); } else { wire(); }
++})();
++
++
++// --- click-to-tune on the program grid too (LOCAL MOD) ---
++(function(){
++  function wireGrid(){
++    var grid=document.getElementById('guide-grid');
++    if(!grid){ setTimeout(wireGrid,500); return; }
++    if(grid._tuneWired) return; grid._tuneWired=true;
++    grid.addEventListener('click', function(e){
++      var row=e.target.closest('.guide-row[data-channel]');
++      if(!row) return;
++      var ch=parseInt(row.dataset.channel,10);
++      if(isNaN(ch)) return;
++      try{ var r=window.fs42Api.get('player/channels/'+ch); if(r&&r.catch){ r.catch(function(err){console.error('tune failed',ch,err);}); } }
++      catch(err){ console.error('tune failed',ch,err); }
++    });
++  }
++  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',wireGrid); } else { wireGrid(); }
++})();
++
++
++// --- mouse-wheel manual scroll (LOCAL MOD) ---
++(function(){
++  function wireWheel(){
++    var sc=document.getElementById('stations-column');
++    var gc=document.querySelector('.guide-grid-container');
++    if(!sc || !gc){ setTimeout(wireWheel,500); return; }
++    if(window._wheelWired) return; window._wheelWired=true;
++    document.body.addEventListener('wheel', function(e){
++      window._userScroll = Date.now();
++      var max = sc.scrollHeight - sc.clientHeight;
++      var nx = Math.max(0, Math.min(max, sc.scrollTop + e.deltaY));
++      sc.scrollTop = nx; gc.scrollTop = nx;
++      e.preventDefault();
++    }, {passive:false});
++  }
++  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',wireWheel); } else { wireWheel(); }
++})();
++
++</script>
+ </body>
+ 
+ </html>
+\ No newline at end of file
+diff --git a/fs42/guide_builder.py b/fs42/guide_builder.py
+index dca0d2e..fea737d 100644
+--- a/fs42/guide_builder.py
++++ b/fs42/guide_builder.py
+@@ -8,6 +8,7 @@ from fs42.station_manager import StationManager
+ from fs42.liquid_manager import LiquidManager, ScheduleNotFound, ScheduleQueryNotInBounds
+ from fs42.liquid_blocks import LiquidBlock
+ from fs42.title_parser import TitleParser
++from fs42 import ersatz_guide
+ 
+ def normalize_video_title(title):
+     custom_patterns = StationManager().server_conf.get("title_patterns", [])
+@@ -100,9 +101,22 @@ class GuideBuilder:
+             if station["hidden"]:
+                 continue
+             elif not station["_has_schedule"]:
+-                to_display = station.get("network_long_name", station["network_name"])
+-                placeholder = PreviewBlock(to_display, width=5400)
+-                entries = [placeholder]
++                entries = None
++                if station.get("network_type") == "streaming":
++                    try:
++                        _slots = ersatz_guide.slots(station, start_time)
++                        if _slots:
++                            entries = []
++                            for _title, _w, _se, _el in _slots:
++                                _disp = normalize_video_title(_title) if normalize else _title
++                                _b = PreviewBlock(_disp); _b.width = _w
++                                _b.started_earlier = _se; _b.ends_later = _el
++                                entries.append(_b)
++                    except Exception:
++                        entries = None
++                if not entries:
++                    to_display = station.get("network_long_name", station["network_name"])
++                    entries = [PreviewBlock(to_display, width=5400)]
+             else:
+                 try:
+                     entries = ScheduleQuery.query_slot(station["network_name"], start_time, normalize)
+diff --git a/fs42/pi/remote_controller.py b/fs42/pi/remote_controller.py
+index f9abc62..2218104 100644
+--- a/fs42/pi/remote_controller.py
++++ b/fs42/pi/remote_controller.py
+@@ -739,6 +739,11 @@ Environment variables:
+ 
+             device = InputDevice(device_path)
+ 
++            try:
++                device.grab()
++                print("device grabbed (exclusive)")
++            except Exception as e:
++                print("grab failed:",e)
+             print(f"Listening for remote control commands from: {device.name}")
+ 
+             # Main event loop
+diff --git a/fs42/reception.py b/fs42/reception.py
+index bcd9943..805be45 100644
+--- a/fs42/reception.py
++++ b/fs42/reception.py
+@@ -41,6 +41,20 @@ def long_change_effect(player, reception):
+         player.update_filters()
+         time.sleep(debounce_fragment)
+ 
++
++def flick_change_effect(player, reception):
++    print("Applying flick change effect.")
++    reception.chaos = 1.0
++    player.update_filters()
++    try:
++        player.play_file("runtime/static.mp4")
++    except Exception as e:
++        print("flick static err:", e)
++    time.sleep(0.4)
++    reception.chaos = 0.0
++    player.update_filters()
++
++
+ class ReceptionStatus(object):
+     __we_are_all_one = {}
+     chaos = 0
+diff --git a/fs42/station_manager.py b/fs42/station_manager.py
+index 30c2459..c665a31 100644
+--- a/fs42/station_manager.py
++++ b/fs42/station_manager.py
+@@ -37,14 +37,14 @@ class StationManager(object):
+                         "late": [23, 0, 1, 2],
+                         "overnight": range(2, 6),
+                     },
+-                    "time_format": "%H:%M",
++                    "time_format": "%-I:%M %p",
+                     "date_time_format": "%Y-%m-%dT%H:%M:%S",
+                     "db_path": "runtime/fs42_fluid.db",
+                     "start_mpv": True,
+                     "server_host": "0.0.0.0",
+                     "server_port": 4242,
+                     "title_patterns": [],
+-                    "video_seek_timeout": 10,
++                    "video_seek_timeout": 60,
+                 }
+                 self._number_index = {}
+                 self._name_index = {}

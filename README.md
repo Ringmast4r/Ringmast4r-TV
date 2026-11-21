@@ -48,6 +48,8 @@ weekend so it does not cost you one.
 - Schedules are pinned to the wall clock and cost nothing until someone tunes
   in; video only transcodes while somebody is watching.
 - Optional: a retro commercials channel fed from archive.org (script included).
+- Optional: the same channels on a real tube TV, from a Raspberry Pi 3B with an
+  IR remote and a Prevue-style guide. See [crt/](crt/README.md).
 
 <a id="quickstart"></a>
 ## `> quickstart`
@@ -104,6 +106,7 @@ a 1080p profile just upscales noise and wastes bandwidth.
 | `docs/COMMERCIALS.md` | The retro commercials channel |
 | `scripts/dl_commercials.py` | archive.org commercials/bumpers downloader with .nfo sidecars |
 | `scripts/setup-windows-shares.ps1` | Optional: feed channels from a Windows PC over SMB |
+| `crt/` | Optional: play the channels on a real CRT from a Raspberry Pi (FieldStation42 setup, patch, channel configs, 480p relay, guide digest) |
 
 <a id="going-public-optional"></a>
 ## `> going_public_optional`

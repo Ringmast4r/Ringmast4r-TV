@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "War",
+    "network_long_name": "War",
+    "channel_number": 24,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/25.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "War"
+      }
+    ]
+  }
+}

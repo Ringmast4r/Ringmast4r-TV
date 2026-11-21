@@ -1,0 +1,21 @@
+{
+  "station_conf": {
+    "network_name": "Guide",
+    "network_type": "guide",
+    "channel_number": 1,
+    "content_dir": "catalog/movie_content",
+    "messages": [
+      "RINGMAST4R TV",
+      "CRT TV",
+      "Retro Cable"
+    ],
+    "images": [
+      "runtime/logo_images/ringmast4r.png"
+    ],
+    "play_sound": false,
+    "fullscreen": true,
+    "width": 720,
+    "height": 480,
+    "scroll_speed": 1.0
+  }
+}
