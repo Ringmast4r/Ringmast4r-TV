@@ -6,7 +6,7 @@
     "network_type": "streaming",
     "streams": [
       {
-        "url": "http://ENGINE_HOST:8421/iptv/channel/18.m3u8?mode=segmenter",
+        "url": "http://ENGINE_HOST:8421/iptv/channel/19.m3u8?mode=segmenter",
         "duration": 86400,
         "title": "Adventure"
       }

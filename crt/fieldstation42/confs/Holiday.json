@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "Holiday",
+    "network_long_name": "Holiday",
+    "channel_number": 32,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/32.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "Holiday"
+      }
+    ]
+  }
+}

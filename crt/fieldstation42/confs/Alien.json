@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "Alien",
+    "network_long_name": "Alien",
+    "channel_number": 28,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/28.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "Alien"
+      }
+    ]
+  }
+}

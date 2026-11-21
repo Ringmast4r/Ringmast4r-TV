@@ -1,0 +1,5 @@
+{
+  "time_format": "%-I:%M %p",
+  "video_seek_timeout": 60,
+  "start_channel": 1
+}

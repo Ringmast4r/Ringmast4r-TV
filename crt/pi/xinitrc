@@ -7,8 +7,6 @@ matchbox-window-manager -use_titlebar no -use_cursor no &
 # IR remote: pinned to the Inteset device, unbuffered log
 ( sleep 10; cd "$HOME/FieldStation42"; env/bin/python -u fs42/pi/remote_controller.py -d flirc ) >> /tmp/remote.log 2>&1 &
 
-# Robust boot tune: wait for player, tune ch13, retry until it actually plays
-( cd "$HOME/FieldStation42"; env/bin/python pi_boot_tune.py ) >> /tmp/boot_tune.log 2>&1 &
 
 cd "$HOME/FieldStation42"
 exec env/bin/python field_player.py >> /tmp/fieldplayer.log 2>&1

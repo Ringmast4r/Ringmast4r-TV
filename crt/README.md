@@ -15,7 +15,7 @@ addresses and passwords replaced by placeholders.
 ```
 media library ──> ErsatzTV engine (:8409, full-res, feeds the web player)
                         │
-                        ├──> crt-hls relay (:8421)  GPU downscale to 720x480 H.264, 2.8 Mbit/s HLS
+                        ├──> crt-hls relay (:8421)  GPU downscale to 720x480 H.264, 2.8 Mbit/s, 1 s HLS segments
                         │          │
                         └──> guide digest (:8420)   XMLTV -> small JSON (now..+6h)
                                    │
@@ -27,7 +27,11 @@ media library ──> ErsatzTV engine (:8409, full-res, feeds the web player)
 - **The web player stays full-res.** The CRT gets its own 480p copy from the
   relay, so lowering the CRT never lowers the public stream.
 - **The relay carries one channel at a time** and only encodes while the Pi is
-  tuned to it (NVENC `scale_cuda` inside the ErsatzTV container).
+  tuned to it (NVENC `scale_cuda` inside the ErsatzTV container). It waits 0.8 s
+  before starting a channel, so channels you flip past never start an encode,
+  and it stops the encode 20 s after the TV stops asking (guide, local channel, off).
+- **One numbering:** each engine channel number is the CRT dial number, so the web
+  player and the tube TV agree. A CRT stream URL is `/iptv/channel/<dial #>.m3u8`.
 - **The guide digest exists because parsing the full XMLTV on the Pi took ~20 s**
   and froze the guide. The engine host parses it and serves ~60-180 KB of JSON.
 
@@ -57,7 +61,7 @@ media library ──> ErsatzTV engine (:8409, full-res, feeds the web player)
    then copy [`pi/bash_profile`](pi/bash_profile) to `~/.bash_profile` and
    [`pi/xinitrc`](pi/xinitrc) to `~/.xinitrc`. The profile forces the composite
    connector on and runs `startx`; the xinitrc turns off blanking, sets the CRT
-   overscan margins, starts the remote listener, tunes a start channel and runs
+   overscan margins, starts the remote listener and runs
    the player.
 5. **mpv:** copy [`pi/mpv.conf`](pi/mpv.conf) to `~/.config/mpv/mpv.conf`
    (GPU output + V4L2 hardware H.264 decode, subtitles off, 15 s cache).
@@ -74,13 +78,19 @@ media library ──> ErsatzTV engine (:8409, full-res, feeds the web player)
    FieldStation42 apply it by hand.
 7. **Channels:** copy [`fieldstation42/confs/`](fieldstation42/confs) into
    `~/FieldStation42/confs/` and replace `ENGINE_HOST` with your engine host.
-   Each streamed channel points at `http://ENGINE_HOST:8421/iptv/channel/<engine #>.m3u8`.
-   Then build: `env/bin/python station_42.py -r` and `env/bin/python station_42.py -w`.
+   Each streamed channel points at `http://ENGINE_HOST:8421/iptv/channel/<dial #>.m3u8`.
+   `confs/main_config.json` boots to the guide (`"start_channel": 1`), uses a
+   12-hour clock and gives streams 60 s to start (`"video_seek_timeout": 60`).
+   Then build the local channels: `env/bin/python station_42.py -r` and `env/bin/python station_42.py -w`.
 8. **Relays on the engine host:** copy [`relay/crt-hls/`](relay/crt-hls) to
    `/opt/crt-hls/` and [`relay/guide-digest/`](relay/guide-digest) to
    `/opt/crt-relay/`, install the two `.service` files in `/etc/systemd/system/`,
    then `sudo systemctl enable --now crt-hls crt-relay`. They expect the
-   ErsatzTV container to be named `ersatztv` with NVENC available.
+   ErsatzTV container to be named `ersatztv` with NVENC available. The relay
+   encodes on GPU 1 (`-hwaccel_device 1`); use `0` on a one-GPU box.
+   In ErsatzTV's settings set the HLS segmenter idle timeout to 15 s
+   (`ffmpeg.segmenter.timeout_seconds`) and the initial segment count to 1, so
+   channels the TV leaves stop encoding quickly.
 9. **Schedules:** [`pi/crontab.txt`](pi/crontab.txt) re-extends schedules every
    3 days (`station_42.py -w`) and restarts the player. Without it, the local
    channels run dry when their week runs out.
@@ -96,42 +106,43 @@ Optional: [`pi/fstab.example`](pi/fstab.example) mounts a movie share for
 
 | File | Change |
 |------|--------|
-| `fs42/station_manager.py` | `video_seek_timeout` 10 -> 60 s (an HLS channel takes 10-15 s to warm up; 10 s gave "technical difficulties"). 12-hour clock. |
+| `fs42/liquid_blocks.py` | **Guide lag fix.** `playback_duration()` used `timedelta.seconds`, which is 0 for a block of exactly one day (every `loop` channel). The guide then stepped one second at a time: one rebuild took 110 s on a Pi 3B, and leaving the guide waited for it. With `total_seconds()` a rebuild takes under 0.5 s and guide-to-channel takes 0.3 s. |
+| `fs42/station_player.py` | Leaving the guide waits at most 1 s for its window to close, then terminates it, instead of `join()` with no timeout. |
+| `field_player.py` | `start_channel: 1` works: the guide sits at index 0, which the start-channel check treated as "not found". |
 | `fs42/guide_builder.py` + new `fs42/ersatz_guide.py` | The on-screen guide shows real titles and times for streamed channels, from the guide digest. |
 | `fs42/fs42_server/api/schedules.py`, `summary.py` | Same listings in the web guide. Streamed channels report a non-zero schedule window, or the web guide skips them. |
 | `fs42/fs42_server/static/guide.html`, `guide_frame.html` | AM/PM times, click a row to tune the TV, mouse-wheel scroll, cache-busted iframe. |
-| `fs42/fs42_server/api/player.py` | Volume steps of 10% on the perceptual (`amixer -M`) scale. |
-| `fs42/pi/remote_controller.py` | Grabs the IR device exclusively so key presses do not leak to the console. |
-| `fs42/reception.py`, `field_player.py` | A short static "flick" effect for channel changes. |
-| new `pi_boot_tune.py` | Waits for the player at boot, tunes the start channel and retries until it actually plays. |
+| `fs42/fs42_server/api/player.py` | Volume steps of 10% (upstream default is 2%). |
 | new `fs42/pi/channel_banner.py` | Experimental on-screen channel and volume banner. Not started by `xinitrc`. |
+
+The clock format, stream timeout and start channel are settings in
+`confs/main_config.json`, not code changes. Upstream already grabs the IR device
+exclusively and uses the perceptual `amixer -M` volume scale.
 
 <a id="the-dial"></a>
 ## `> the_dial`
 
-| CRT # | Channel | Source |
-|------:|---------|--------|
-| 1 | Guide | Prevue-style guide (local) |
-| 2-4 | The Matrix trilogy | `loop` channels from local 480p files |
-| 5 | TV Series | engine 5 |
-| 6 | Documentaries | engine 4 |
-| 7 | Hack The Planet | engine 3 |
-| 8 | Horror | engine 6 |
-| 9 | Cartoons | engine 7 |
-| 10 | Sci-Fi | engine 8 |
-| 11 | Crime | engine 9 |
-| 12 | Westerns | engine 10 |
-| 13 | Music Videos | engine 27 |
-| 14 | Extended Cuts | engine 11 |
-| 15 | Movies | engine 2 |
-| 16 | Action | engine 15 |
-| 17 | Comedy | engine 13 |
-| 18 | Kids | engine 14 |
-| 19 | Adventure | engine 18 |
-| 20 | Thriller | engine 16 |
-| 23 | Mystery | engine 26 |
-| 24 | War | engine 25 |
-| 33-40 | Drama, History, Family, Biopic, Romance, Zombie, Monster, Time Travel | engine 31-38 |
+Dial number = engine number = web player number for every streamed channel.
+
+| # | Channel | # | Channel | # | Channel |
+|--:|---------|--:|---------|--:|---------|
+| 1 | Guide (local) | 15 | Movies | 29 | Spy |
+| 2 | The Matrix (local) | 16 | Action | 30 | Martial Arts |
+| 3 | The Matrix Reloaded (local) | 17 | Comedy | 31 | Adult Swim |
+| 4 | The Matrix Revolutions (local) | 18 | Kids | 32 | Holiday |
+| 5 | TV Series | 19 | Adventure | 33 | Drama |
+| 6 | Documentaries | 20 | Thriller | 34 | History |
+| 7 | Hack The Planet | 21 | 90s Nostalgia | 35 | Family |
+| 8 | Horror | 22 | Fantasy | 36 | Biopic |
+| 9 | Cartoons | 23 | Mystery | 37 | Romance |
+| 10 | Sci-Fi | 24 | War | 38 | Zombie |
+| 11 | Crime | 25 | Vampire | 39 | Monster |
+| 12 | Westerns | 26 | Superhero | 40 | Time Travel |
+| 13 | Music Video | 27 | Dystopian | 41 | Infomercials |
+| 14 | Extended Cut | 28 | Alien | 42 | Commercials |
+
+Channels 2-4 are `loop` channels playing 480p files stored on the Pi, so they
+tune instantly. Everything from 5 up streams from the engine.
 
 <a id="gotchas"></a>
 ## `> gotchas`
@@ -152,7 +163,18 @@ Optional: [`pi/fstab.example`](pi/fstab.example) mounts a movie share for
 - **Do not put `profile=fast` in `mpv.conf`**: it errors on this mpv build and risks a black screen.
 - **Local `loop` channels need a built schedule** (`station_42.py -w`) or the guide is
   empty and the player sticks on the guide.
-- **Changing to a streamed channel takes 10-15 s**: the relay starts an encode on demand.
+- **Changing to a streamed channel takes about 7 s**: the engine and the relay both
+  start an encode on demand. Local files tune in well under a second.
+- **Flipping fast through streamed channels jams the GPU** if every channel you pass
+  starts an encode: GeForce cards allow about 8 NVENC sessions, and leftovers fail
+  with `OpenEncodeSessionEx failed: incompatible client key (21)`. The relay's 0.8 s
+  debounce, its 20 s idle stop and the engine's 15 s segmenter timeout prevent it.
+- **The guide freezes for up to two minutes** on a stock FieldStation42 with `loop`
+  channels: see `fs42/liquid_blocks.py` in the patch table.
+- **mpv's control socket moved** in newer FieldStation42 to `~/FieldStation42/runtime/mpv.socket`.
+- **Fixed address:** give the Pi a static address in NetworkManager
+  (`nmcli con mod <connection> ipv4.method manual ipv4.addresses <ip>/24 ipv4.gateway <router> ipv4.dns <dns>`)
+  so the web remote stays put across power cycles.
 - **Wrong guide times:** Raspberry Pi OS defaults to Europe/London. Set the Pi's timezone
   to match the engine (`sudo timedatectl set-timezone America/New_York`).
 
@@ -173,6 +195,6 @@ Optional: [`pi/fstab.example`](pi/fstab.example) mounts a movie share for
 | `fieldstation42/UPSTREAM_COMMIT` | The FieldStation42 commit the patch applies to |
 | `fieldstation42/fieldstation42-changes.patch` | All changes to upstream files |
 | `fieldstation42/new-files/` | Files added to the FieldStation42 tree |
-| `fieldstation42/confs/` | The 30 channel configs (`ENGINE_HOST` placeholder) |
+| `fieldstation42/confs/` | The 42 channel configs (`ENGINE_HOST` placeholder) and `main_config.json` |
 | `relay/crt-hls/` | The 480p relay and its systemd unit |
 | `relay/guide-digest/` | The guide digest and its systemd unit (`crt-relay.service`) |

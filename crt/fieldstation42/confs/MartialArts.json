@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "MartialArts",
+    "network_long_name": "Martial Arts",
+    "channel_number": 30,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/30.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "Martial Arts"
+      }
+    ]
+  }
+}

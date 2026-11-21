@@ -1,0 +1,15 @@
+{
+  "station_conf": {
+    "network_name": "Spy",
+    "network_long_name": "Spy",
+    "channel_number": 29,
+    "network_type": "streaming",
+    "streams": [
+      {
+        "url": "http://ENGINE_HOST:8421/iptv/channel/29.m3u8?mode=segmenter",
+        "duration": 86400,
+        "title": "Spy"
+      }
+    ]
+  }
+}
