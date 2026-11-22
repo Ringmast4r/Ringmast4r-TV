@@ -8,5 +8,11 @@ matchbox-window-manager -use_titlebar no -use_cursor no &
 ( sleep 10; cd "$HOME/FieldStation42"; env/bin/python -u fs42/pi/remote_controller.py -d flirc ) >> /tmp/remote.log 2>&1 &
 
 
+# The Pi has no clock battery: after a power cut it boots with the last saved time.
+# Wait up to 60 s for the network time so the guide is built with the right hours.
+i=0
+while [ "$(timedatectl show -p NTPSynchronized --value)" != yes ] && [ $i -lt 60 ]; do sleep 1; i=$((i+1)); done
+echo "$(date) clock sync wait: ${i}s" >> /tmp/fieldplayer.log
+
 cd "$HOME/FieldStation42"
 exec env/bin/python field_player.py >> /tmp/fieldplayer.log 2>&1
