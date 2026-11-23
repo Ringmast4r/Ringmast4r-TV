@@ -84,7 +84,7 @@ down. Scan with the player off, then stream. War story and recovery steps in
 | Setup | Experience |
 |-------|-----------|
 | Any x86 box, CPU only | Works. Cap the transcode profile at 480p veryfast and exclude 4K sources; software x264 cannot do 4K live. 480p is period-correct for the CRT aesthetic anyway. |
-| NVIDIA GPU (NVENC) | 720p/1080p live transcode is effortless. Use the `-nvidia` image. One mid-range card handles many concurrent channels. |
+| NVIDIA GPU (NVENC) | 720p/1080p live transcode is effortless. Use the `-nvidia` image. The card has the speed for many channels, but GeForce drivers cap simultaneous encodes at about 8 for the whole machine: see [GOTCHAS 10](docs/GOTCHAS.md) to lift it. |
 | Media on ext4/xfs/zfs | No special care needed. |
 | Media on ntfs-3g / FUSE | Read the one rule above. Seriously. |
 
@@ -106,6 +106,8 @@ a 1080p profile just upscales noise and wastes bandwidth.
 | `docs/COMMERCIALS.md` | The retro commercials channel |
 | `scripts/dl_commercials.py` | archive.org commercials/bumpers downloader with .nfo sidecars |
 | `scripts/setup-windows-shares.ps1` | Optional: feed channels from a Windows PC over SMB |
+| `scripts/find_unfinished_copies.py` | Finds interrupted copies (good header, blank body) that kill a channel while they air |
+| `scripts/test_all_channels.sh` | Tunes every channel one at a time inside the engine container and saves a frame from each |
 | `crt/` | Optional: play the channels on a real CRT from a Raspberry Pi (FieldStation42 setup, patch, channel configs, 480p relay, guide digest) |
 
 <a id="going-public-optional"></a>

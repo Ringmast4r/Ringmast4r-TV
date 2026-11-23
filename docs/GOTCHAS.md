@@ -139,3 +139,37 @@ logged as WRN and skipped; harmless, and the height scope excludes them.
   a black screen, and every tune + HLS error is logged to the console with a
   plain-English explanation. Open devtools before asking why a channel is
   dark; the answer is usually printed there.
+
+## 10. GeForce cards cap simultaneous encodes for the whole machine
+
+Consumer NVIDIA cards allow about 8 NVENC encode sessions at once, and the cap
+counts every GeForce card in the box together, not each card. Past it, a new
+channel fails with `OpenEncodeSessionEx failed: incompatible client key (21)` or
+`No capable devices found`, and the viewer just sees a channel that never starts.
+Every watched channel is one session; the optional CRT relay (`crt/`) adds two
+per channel it keeps warm (the engine's encode plus its own 480p encode), so with
+three warm channels the web player is left with about two.
+
+Fix: lift the cap with [keylase/nvidia-patch](https://github.com/keylase/nvidia-patch).
+Stop the ErsatzTV container (so no running encoder has the library open), run
+`sudo bash patch.sh`, start the container. It keeps the original library and
+undoes with `patch.sh -r`. A driver update brings the cap back: run it again
+after one. Check with several test encodes at once, e.g. twelve copies of
+`ffmpeg -f lavfi -i testsrc2=size=1280x720:rate=30 -t 8 -c:v h264_nvenc -f null -`
+inside the container.
+
+## 11. Unfinished copies get scheduled and kill the channel while they air
+
+A copy that was interrupted can keep a good header. The scanner reads a normal
+duration and schedules it, but the rest of the file is zeros, so that channel
+shows nothing until the slot ends. Files whose header is also blank are probed as
+zero duration and skipped (`Skipping media item with zero duration` in the log);
+these are not.
+
+On the disk they have far less space allocated than their length.
+`scripts/find_unfinished_copies.py` checks every video by metadata alone
+(seconds for 12,000 files). Move the hits out of the library (or into a folder
+with a `.etvignore`), rescan, empty the trash, and wait until no missing items
+remain before resetting playouts: the first trash call can crawl, and a second
+call may finish it at once. `scripts/test_all_channels.sh` then tunes every
+channel one at a time and saves a frame from each.
