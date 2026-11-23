@@ -175,7 +175,18 @@ channel's query uses.
 - **Flipping fast through streamed channels jams the GPU** if every channel you pass
   starts an encode: GeForce cards allow about 8 NVENC sessions, and leftovers fail
   with `OpenEncodeSessionEx failed: incompatible client key (21)`. The relay's 0.8 s
-  debounce, its 20 s idle stop and the engine's 15 s segmenter timeout prevent it.
+  debounce, its 20 s idle stop and the engine's 15 s segmenter timeout help, but the
+  limit counts every GPU in the box together: with the relay keeping three channels
+  warm (three engine encodes plus three relay encodes), the web player had only about
+  two left. The fix is to lift the limit with
+  [keylase/nvidia-patch](https://github.com/keylase/nvidia-patch): stop the ErsatzTV
+  container, run `patch.sh`, start it again. A driver update undoes it, so re-run it after one.
+- **A channel goes dead while it airs an unfinished copy.** A file whose copy never
+  finished can keep a valid header, so ErsatzTV reads a normal duration and schedules it,
+  but the rest is blank and the channel shows nothing until the slot ends. On the drive
+  these files have far less space allocated than their length (`stat` blocks x 512 is
+  under 90% of the size), which a metadata-only sweep finds in seconds. Move them out of
+  the library, rescan, empty the trash and reset the playouts.
 - **The guide freezes for up to two minutes** on a stock FieldStation42 with `loop`
   channels: see `fs42/liquid_blocks.py` in the patch table.
 - **mpv's control socket moved** in newer FieldStation42 to `~/FieldStation42/runtime/mpv.socket`.
